@@ -49,14 +49,23 @@ set_face_width_button.pack()
 
 root.mainloop()
 
-#root output directory
-output_dir = "outputs"
+# Get the path to the project's root directory
+project_root = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to the outputs directory in the project's root directory
+output_dir = os.path.join(project_root, '..' , 'outputs')
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
+# Get the path to the models directory
+models_dir = os.path.join(project_root, '..', 'models')
+
+# Load the shape predictor model from the models directory
+shape_predictor_path = os.path.join(models_dir, 'shape_predictor_68_face_landmarks.dat')
+
 # Initialize dlib's face detector and shape predictor
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor(shape_predictor_path)
 
 # Initialize the webcam
 cap = cv2.VideoCapture(0)
