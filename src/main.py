@@ -1,7 +1,7 @@
 import signal
 import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QApplication, QDesktopWidget
+from PyQt5.QtWidgets import QApplication,QLabel,QDesktopWidget,QHBoxLayout, QCheckBox, QVBoxLayout
 import socket
 import time
 import sys
@@ -16,7 +16,7 @@ def start_or_stop_processes(start):
     global front_proc, side_proc
     if start:
         # Start the two subprocesses and return the objects
-        front_proc = subprocess.Popen(['python', 'frontfaceapp.py', str(front_face_width)])
+        front_proc = subprocess.Popen(['python', 'app.py', str(front_face_width)])
         side_proc = subprocess.Popen(['python', 'sidefaceapp.py', str(side_face_width)])
         return front_proc, side_proc
     else:
@@ -43,19 +43,54 @@ class MainWindow(QtWidgets.QWidget):
         self.label2.setFont(font)
         self.button = QtWidgets.QPushButton("OK", clicked=self.get_entry_value)
         self.button2 = QtWidgets.QPushButton("Exit", clicked=self.close_app)
+        # Create the label and checkbox widgets
+        self.label3 = QLabel('Front Face Lines:', self)
+        self.checkbox3_1 = QCheckBox(self)
+        self.label3_1 = QLabel(': sZy left - sZy right', self)
 
+        self.checkbox3_2 = QCheckBox(self)
+        self.label3_2 = QLabel(':sN - Sn', self)
+
+
+        self.label4 = QLabel('Side Face Lines:', self)
+        self.label4_1 = QLabel(': sZy left - sZy right', self)
+        self.checkbox4 = QCheckBox(self)
+        
         # Add a label to display the d1_mm variable
         self.d1_mm_label = QtWidgets.QLabel("d1_mm: ")
 
-        layout = QtWidgets.QVBoxLayout(self)
+        layout = QVBoxLayout(self)
+        
         layout.addWidget(self.label)
         layout.addWidget(self.entry)
         layout.addWidget(self.label2)
         layout.addWidget(self.entry2)
         layout.addWidget(self.button)
         layout.addWidget(self.button2)
-        layout.addWidget(self.d1_mm_label)
+        layout.addWidget(self.label3)
+        
+        layoutH = QHBoxLayout(self)
+        layout.addLayout(layoutH)
+        layoutH.addWidget(self.checkbox3_1)
+        layoutH.addWidget(self.label3_1)
 
+        layoutH3 = QHBoxLayout(self)
+        layout.addLayout(layoutH3)
+        layoutH3.addWidget(self.checkbox3_2)
+        layoutH3.addWidget(self.label3_2)
+        
+        layout.addWidget(self.label4)
+
+        layoutH2 = QHBoxLayout(self)
+        layout.addLayout(layoutH2)
+        
+        layoutH2.addWidget(self.checkbox4)
+        layoutH2.addWidget(self.label4_1)
+        
+        #layout.addWidget(self.d1_mm_label)
+
+        
+        #self.setLayout(layout)
         # Start the client to receive the d1_mm variable
         self.client = D1MmClient(self.d1_mm_label)
         self.client.start()
