@@ -49,7 +49,7 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(shape_predictor_path)
 
 # Initialize the webcam or video file path
-cap = cv2.VideoCapture(0) #video file path = 0 for webcam
+cap = cv2.VideoCapture('C:/Users/saadi/Videos/20230518_234547.mp4') #video file path = 0 for webcam
 # Get the frame rate and resolution
 fps_real = cap.get(cv2.CAP_PROP_FPS)
 v_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -132,7 +132,7 @@ first_face_position = None
 elapsed_time_real=0
 # Initialize point for displaying average of landmark points 22 and 23
 avg_point = None
-
+fps = 0
 # Function for drawing lines
 def draw_lines(frame):
     if show_lines:
@@ -181,10 +181,11 @@ while True:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # define the size and position of the black box
-    box_width = 150
-    box_height = 50
+    box_width = int(width / 6)  # Adjust the fraction as needed
+    box_height = int(height / 14)  # Adjust the fraction as needed
     box_x = width - box_width
     box_y = 0
+
     # draw the black box on the frame
     cv2.rectangle(frame, (box_x, box_y), (width, height), (0, 0, 0), -1)
 
@@ -367,31 +368,31 @@ while True:
         text6_label= "Ar/Go-sPog/Gn left:"
         text6= f"{d_9_15_sum:.2f}mm"
 
-        text_width, text_height = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
-        x_ec, y_ec = frame.shape[1] - text_width - 10, 30
-        cv2.putText(frame, text0_label, (x_ec, y_ec),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, text0, (x_ec, y_ec+20),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, text1, (x_ec, y_ec+40),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
-        cv2.putText(frame, text2_label, (x_ec, y_ec+80),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 125, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, text2, (x_ec, y_ec+100),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 125, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, text3, (x_ec, y_ec+120),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, text4, (x_ec, y_ec+140),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 125), 1, cv2.LINE_AA)
-        cv2.putText(frame, text5_label, (x_ec, y_ec+160),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 0), 1, cv2.LINE_AA)
-        cv2.putText(frame, text5, (x_ec, y_ec+180),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1, cv2.LINE_AA)
-        cv2.putText(frame, text6_label, (x_ec, y_ec+200),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, text6, (x_ec, y_ec+220),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         
+        # calculate the text size
+        text_scale = 1  # Adjust the scale as needed
+        text_thickness = 2
+        text_font = cv2.FONT_HERSHEY_SIMPLEX
+
+        text_width, text_height = cv2.getTextSize(text1, text_font, text_scale, text_thickness)[0]
+
+        # calculate the text positions
+        x_ec = frame.shape[1] - text_width - 10  # Adjust the offset as needed
+        y_ec = int(frame.shape[0] * 0.05)  # Adjust the fraction as needed
+
+        # draw the text on the frame
+        cv2.putText(frame, text0_label, (x_ec, y_ec), text_font, text_scale, (255, 255, 255), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text0, (x_ec, y_ec + int(text_height) + 10), text_font, text_scale, (255, 255, 255), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text1, (x_ec, y_ec + int(text_height) * 2 + 20), text_font, text_scale, (255, 0, 0), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text2_label, (x_ec, y_ec + int(text_height) * 4 + 40), text_font, text_scale, (0, 125, 255), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text2, (x_ec, y_ec + int(text_height) * 5 + 50), text_font, text_scale, (0, 125, 255), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text3, (x_ec, y_ec + int(text_height) * 6 + 60), text_font, text_scale, (255, 0, 255), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text4, (x_ec, y_ec + int(text_height) * 7 + 70), text_font, text_scale, (0, 255, 125), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text5_label, (x_ec, y_ec + int(text_height) * 8 + 90), text_font, text_scale, (255, 255, 0), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text5, (x_ec, y_ec + int(text_height) * 9 + 100), text_font, text_scale, (255, 255, 0), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text6_label, (x_ec, y_ec + int(text_height) * 10 + 120), text_font, text_scale, (0, 0, 255), text_thickness, cv2.LINE_AA)
+        cv2.putText(frame, text6, (x_ec, y_ec + int(text_height) * 11 + 130), text_font, text_scale, (0, 0, 255), text_thickness, cv2.LINE_AA)
+
     else:
         # If no faces are detected, reset the first_face_position variable
         first_face_position = None

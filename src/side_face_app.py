@@ -41,7 +41,7 @@ if not os.path.exists(timestamp_dir):
     os.makedirs(timestamp_dir)
     
 # Open a video capture stream from the default webcam
-cap = cv2.VideoCapture('Input video path') # Enter 0 for webcame
+cap = cv2.VideoCapture("C:\Projects\Dental Loops Rough\saadside.mp4") # Enter 0 for webcame
 # Getting resolution of the input
 v_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 v_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -141,7 +141,25 @@ def draw_lines(frame):
         #Magenta
         cv2.line(frame, point_2, point_9, (255, 0, 255), 1, cv2.LINE_AA)
         cv2.line(frame, point_2, point_34, (255, 0, 255), 1, cv2.LINE_AA)
-        
+
+# Function to calculate angles between facial lines
+def calculate_angle(landmark_point_1, landmark_point_2, landmark_vertex):
+    
+    # Getting x,y coordinates 
+    x1, y1 = landmark_point_1 - landmark_vertex
+    x2, y2 = landmark_point_2 - landmark_vertex
+
+    # Calculating Angle
+    dot_product = x1 * x2 + y1 * y2
+    length_1 = math.sqrt(x1 ** 2 + y1 ** 2)
+    length_2 = math.sqrt(x2 ** 2 + y2 ** 2)
+    angle = math.acos(dot_product / (length_1 * length_2))
+    
+    # Converting Radian to Degree
+    angle = math.degrees(angle)
+    
+    return angle
+
 # Initialize the variables
 frame_count = 0
 g1 = []
@@ -231,33 +249,18 @@ while True:
         d3_mm = (d3 / face_width_px) * face_width_mm
 
         # Extract the landmarks of interest
-        landmark_2 = faces[1]  
-        landmark_9 = faces[8]  
-        landmark_34 = faces[33]  
+        landmark_2 = faces[2-1]  
+        landmark_9 = faces[9-1]  
+        landmark_34 = faces[34-1]  
 
-        #Angle
-        xA1,yA1 = landmark_9 - landmark_2
-        xA2,yA2 = landmark_34 - landmark_2
-
-        dot_product = xA1*xA2 + yA1*yA2
-        length_1 = math.sqrt(xA1**2 + yA1**2)
-        length_2 = math.sqrt(xA2**2 + yA2**2)
-        angle = math.acos(dot_product / (length_1 * length_2))
-        angle = math.degrees(angle)
-
-        xA3,yA3 = avg_point - landmark_34
-        xA4,yA4 = landmark_34 - landmark_9
-
-        dot_product2 = xA3*xA4 + yA3*yA4
-        length_3 = math.sqrt(xA3**2 + yA3**2)
-        length_2 = math.sqrt(xA4**2 + yA4**2)
-        angle2 = math.acos(dot_product2 / (length_3 * length_2))
-        angle2 = math.degrees(angle2)
+        # Calling the Angle Function
+        angle_1 = calculate_angle(landmark_9, landmark_34, landmark_2)
+        angle_2 = calculate_angle(avg_point, landmark_9, landmark_34)
         
         g1.append((d1_mm))
         g2.append((d2_mm))
-        g3.append((angle))
-        g4.append((angle2))
+        g3.append((angle_1))
+        g4.append((angle_2))
        
         #Display the eucledian distances on the top right side of the frame
         text0_label="Ala-Tragus :"
@@ -276,9 +279,9 @@ while True:
         text3=f"{d3_mm:.2f}mm"
         
         text4_label="Angle(sN-Ar-Pog):"
-        text4 = f"{angle:.1f}"
+        text4 = f"{angle_1:.1f}"
         text5_label="Angle(sN-Sn-Pog):"
-        text5 = f"{angle2:.1f}"
+        text5 = f"{angle_2:.1f}"
 
         text_width, text_height = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
         x_ec, y_ec = frame.shape[1] - text_width - 10, 30

@@ -7,7 +7,7 @@ import time
 import sys
 from PyQt5.QtCore import QTimer
 print(sys.executable)
-path = r"C:\Projects\Landmarks\landmark\Scripts\python.exe"
+#path = r"C:\Projects\Landmarks\landmark\Scripts\python.exe"
 front_proc = None
 side_proc = None
 front_face_width = None
@@ -16,8 +16,8 @@ def start_or_stop_processes(start):
     global front_proc, side_proc
     if start:
         # Start the two subprocesses and return the objects
-        front_proc = subprocess.Popen(['python', 'app.py', str(front_face_width)])
-        side_proc = subprocess.Popen(['python', 'sidefaceapp.py', str(side_face_width)])
+        front_proc = subprocess.Popen(['python', 'front_face_app.py', str(front_face_width)])
+        side_proc = subprocess.Popen(['python', 'side_face_app.py', str(side_face_width)])
         return front_proc, side_proc
     else:
         # Stop the two subprocesses using their objects
