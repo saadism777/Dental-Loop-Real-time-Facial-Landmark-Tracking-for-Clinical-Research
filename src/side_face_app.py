@@ -1,22 +1,167 @@
+import csv
 import datetime
 import math
 import os
 import sys
 import cv2
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 import face_alignment
+from PyQt5.QtWidgets import QDesktopWidget, QApplication, QWidget, QVBoxLayout, QCheckBox
 
+# Open a video capture stream from the default webcam
+cap = cv2.VideoCapture(0) # Enter 0 for webcam
+
+# Initialize the variable to toggle the lines
+show_lines = True 
+show_lines_Ala_Tragus = True
+show_lines_sN_Sn = True
+show_lines_Sn_sPog = True
+show_lines_Ar_sPog = True
+show_lines_sN_Ar_Pog = True
+# Checkbox Class for the lines
+class Checkbox(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('SideFace: Show/Hide Lines')
+
+        # Create the boolean variable
+        self.boolean_variable = True
+
+        # Create checkboxes
+        checkbox0 = QCheckBox('All Lines:', self)
+        checkbox0.setChecked(self.boolean_variable)
+        checkbox0.stateChanged.connect(self.checkbox_state)
+
+        checkbox1 = QCheckBox('Ala-Tragus :', self)
+        checkbox1.setChecked(self.boolean_variable)
+        checkbox1.stateChanged.connect(self.checkbox_state_Ala_Tragus)
+
+        checkbox2 = QCheckBox('sN-Sn:', self)
+        checkbox2.setChecked(self.boolean_variable)
+        checkbox2.stateChanged.connect(self.checkbox_state_sN_Sn)
+
+        checkbox3 = QCheckBox('Sn-sPog/Gn:', self)
+        checkbox3.setChecked(self.boolean_variable)
+        checkbox3.stateChanged.connect(self.checkbox_state_Sn_sPog)
+
+        checkbox4 = QCheckBox('Ar/Go-sPog/Gn right:', self)
+        checkbox4.setChecked(self.boolean_variable)
+        checkbox4.stateChanged.connect(self.checkbox_state_Ar_sPog)
+
+        checkbox5 = QCheckBox('Angle(sN-Ar-Pog):', self)
+        checkbox5.setChecked(self.boolean_variable)
+        checkbox5.stateChanged.connect(self.checkbox_state_sN_Ar_Pog)
+
+        # Create a layout and add checkboxes to it
+        layout = QVBoxLayout()
+        layout.addWidget(checkbox0)
+        layout.addWidget(checkbox1)
+        layout.addWidget(checkbox2)
+        layout.addWidget(checkbox3)
+        layout.addWidget(checkbox4)
+        layout.addWidget(checkbox5)
+
+        # Set the layout for the main widget
+        self.setLayout(layout)
+        
+        # Resize the window
+        self.resize(300, 300)
+        screen = QDesktopWidget().screenGeometry()
+
+        # Calculate the center position of the screen
+        center_x = screen.width() // 2
+        center_y = screen.height() // 2
+
+        # Move the window to the center of the screen
+        self.move(center_x + 350 - self.width() // 2, center_y + 200 - self.height() // 2)
+    def checkbox_state(self, state):
+        sender = self.sender()
+        global show_lines
+        # Update the boolean variable based on checkbox state
+        if state == 2:  # Qt.Checked
+            show_lines = True
+        else:
+            show_lines = False
+
+        print(f'{sender.text()} state changed: {show_lines}')
+    
+    def checkbox_state_Ala_Tragus(self, state):
+        sender = self.sender()
+        global show_lines_Ala_Tragus
+        # Update the boolean variable based on checkbox state
+        if state == 2:  # Qt.Checked
+            show_lines_Ala_Tragus = True
+        else:
+            show_lines_Ala_Tragus = False
+
+        print(f'{sender.text()} state changed: {show_lines_Ala_Tragus}')
+    
+    def checkbox_state_sN_Sn(self, state):
+        sender = self.sender()
+        global show_lines_sN_Sn
+        # Update the boolean variable based on checkbox state
+        if state == 2:  # Qt.Checked
+            show_lines_sN_Sn = True
+        else:
+            show_lines_sN_Sn = False
+
+        print(f'{sender.text()} state changed: {show_lines_sN_Sn}')
+    
+    def checkbox_state_Sn_sPog(self, state):
+        sender = self.sender()
+        global show_lines_Sn_sPog
+        # Update the boolean variable based on checkbox state
+        if state == 2:  # Qt.Checked
+            show_lines_Sn_sPog = True
+        else:
+            show_lines_Sn_sPog = False
+
+        print(f'{sender.text()} state changed: {show_lines_Sn_sPog}')
+
+    def checkbox_state_Ar_sPog(self, state):
+        sender = self.sender()
+        global show_lines_Ar_sPog
+        # Update the boolean variable based on checkbox state
+        if state == 2:  # Qt.Checked
+            show_lines_Ar_sPog = True
+        else:
+            show_lines_Ar_sPog = False
+
+        print(f'{sender.text()} state changed: {show_lines_Ar_sPog}')
+
+    def checkbox_state_sN_Ar_Pog(self, state):
+        sender = self.sender()
+        global show_lines_sN_Ar_Pog
+        # Update the boolean variable based on checkbox state
+        if state == 2:  # Qt.Checked
+            show_lines_sN_Ar_Pog = True
+        else:
+            show_lines_sN_Ar_Pog = False
+
+        print(f'{sender.text()} state changed: {show_lines_sN_Ar_Pog}')
+
+    # Cleaning up before quitting the app
+    def closeEvent(self, event):
+        # Generating graphs    
+        graph(graph_1,'Soft tissue over nasion','Subnasale')
+        graph(graph_2,'Subnasale','Soft tissue over Poginion')
+        angle_graph(graph_3,'(sN-Ar','-Pog)')
+        angle_graph(graph_4,'(sN-Sn','-Pog)')
+        cap.release()
+        out.release()
+        event.accept()
+        sys.exit(app.exec_())
+        cv2.destroyAllWindows()
 # initialize face width variable
 face_width_mm = float(sys.argv[1])
 #face_width_mm=84
 
 # Store the landmarks for the first face detected
 first_face_landmarks = None
-
-# Initialize the variable to toggle the lines
-show_lines = True 
 
 # Initialize average point variable
 avg_point = None
@@ -75,7 +220,15 @@ elapsed_time_real=0
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 video_path = os.path.join(timestamp_dir, f'side_recorded_{date_string}.mp4')
 out = cv2.VideoWriter(video_path, fourcc, fps_real, (v_width, v_height)) 
-
+# Initialize the CSV files
+#landmark_csv_path = os.path.join(timestamp_dir, f'landmark_points_{date_string}.csv')
+distance_csv_path = os.path.join(timestamp_dir, f'side_eucledian_distances_{date_string}.csv')
+with open(distance_csv_path, mode='w') as distance_file:
+    #landmark_writer = csv.writer(landmark_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    #landmark_writer.writerow(['Frame No', 'Landmark No', 'X', 'Y'])
+    distance_writer = csv.writer(distance_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    distance_writer.writerow(['Frame No','Time(s)', 'Ala-Tragus(mm)', 'sN-Sn(mm)', 'Sn-sPog/Gn(mm)',
+                               'Ar/Go-sPog/Gn right(mm)', 'Angle(sN-Ar-Pog)(degree)', 'Angle(sN-Sn-Pog)(degree)'])
 #Images Dir
 images_dir = os.path.join(timestamp_dir, "side_images")
 if not os.path.exists(images_dir):
@@ -99,7 +252,7 @@ def graph(dist,p1,p2):
     plt.title(f'Euclidean Distance of Landmarks {p1} and {p2}')
     plt.xlabel('Time (s)')
     plt.ylabel('Distance (mm)')
-    output_file = f'{graph_path}/euclidean_distance_{p1}_{p2}.jpg'
+    output_file = f'{graph_path}/side_euclidean_distance_{p1}_{p2}.jpg'
     
     plt.savefig(output_file)
 
@@ -131,16 +284,20 @@ def angle_graph(angle,p1,p2):
 
 def draw_lines(frame):
     if show_lines:
-        #Orange
-        cv2.line(frame, point_34, point_9, (0, 125, 255), 1, cv2.LINE_AA)
-        if avg_point:
-                #Blue
-                cv2.line(frame, avg_point, point_34, (255, 0, 0), 1, cv2.LINE_AA)
-        #Cyan
-        cv2.line(frame, point_5, point_9, (255, 255, 0), 1, cv2.LINE_AA)
-        #Magenta
-        cv2.line(frame, point_2, point_9, (255, 0, 255), 1, cv2.LINE_AA)
-        cv2.line(frame, point_2, point_34, (255, 0, 255), 1, cv2.LINE_AA)
+        if show_lines_Sn_sPog:
+                #Orange
+                cv2.line(frame, point_34, point_9, (0, 125, 255), 1, cv2.LINE_AA)
+        if show_lines_sN_Sn:
+                if avg_point:
+                        #Blue
+                        cv2.line(frame, avg_point, point_34, (255, 0, 0), 1, cv2.LINE_AA)
+        if show_lines_Ar_sPog:
+                #Cyan
+                cv2.line(frame, point_5, point_9, (255, 255, 0), 1, cv2.LINE_AA)
+        if show_lines_sN_Ar_Pog:
+                #Magenta
+                cv2.line(frame, point_2, point_9, (255, 0, 255), 1, cv2.LINE_AA)
+                cv2.line(frame, point_2, point_34, (255, 0, 255), 1, cv2.LINE_AA)
 
 # Function to calculate angles between facial lines
 def calculate_angle(landmark_point_1, landmark_point_2, landmark_vertex):
@@ -162,16 +319,16 @@ def calculate_angle(landmark_point_1, landmark_point_2, landmark_vertex):
 
 # Initialize the variables
 frame_count = 0
-g1 = []
-g2 = []
-g3 = []
-g4 = []
-g5 = []
-g6 = []
-g7 = []
-g8 = []
+graph_1 = []
+graph_2 = []
+graph_3 = []
+graph_4 = []
 start_time = datetime.datetime.now()
 
+# Starting the Checkbox app
+app = QApplication(sys.argv)
+window = Checkbox()
+window.show()
 # Process the video
 while True:
     # Read a frame from the video stream
@@ -238,10 +395,10 @@ while True:
                         (point_9[1] - point_5[1]) ** 2)
         
         # Convert the distances from pixels to cm (assuming a face width of 15cm)
-        x16, y16 = map(int, faces[32])
-        x0, y0 = map(int, faces[1])
-        face_width_px = math.sqrt((x0 - x16) ** 2 +
-                        (y0 - y16) ** 2)
+        x33, y33 = map(int, faces[32])
+        x2, y2 = map(int, faces[1])
+        face_width_px = math.sqrt((x2 - x33) ** 2 +
+                        (y2 - y33) ** 2)
         
         #face_width_mm from input
         d1_mm = (d1 / face_width_px) * face_width_mm
@@ -257,13 +414,13 @@ while True:
         angle_1 = calculate_angle(landmark_9, landmark_34, landmark_2)
         angle_2 = calculate_angle(avg_point, landmark_9, landmark_34)
         
-        g1.append((d1_mm))
-        g2.append((d2_mm))
-        g3.append((angle_1))
-        g4.append((angle_2))
+        graph_1.append((d1_mm))
+        graph_2.append((d2_mm))
+        graph_3.append((angle_1))
+        graph_4.append((angle_2))
        
         #Display the eucledian distances on the top right side of the frame
-        text0_label="Ala-Tragus :"
+        text0_label="Ala-Tragus:"
         text0=f"{face_width_mm:.2f}mm"
 
         text1=f"{d1_mm:.2f}mm"
@@ -312,14 +469,18 @@ while True:
     end_time = datetime.datetime.now()
     elapsed_time = (end_time - start_time).total_seconds()
     fps = frame_count / elapsed_time
-    
+    #Write the frame number and eucledian distances to the distance CSV file
+    with open(distance_csv_path, mode='a') as distance_file:
+        distance_writer = csv.writer(distance_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        distance_writer.writerow([frame_count,elapsed_time_real,face_width_mm, d1_mm, d2_mm, d3_mm, angle_1, angle_2])
     # Calculate the elapsed time
     elapsed_time_real = frame_count/ fps_real
     cv2.putText(frame, f"Frame: {frame_count}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
     cv2.putText(frame, f"FPS: {fps:.1f}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
     cv2.putText(frame, f"Time: {elapsed_time_real:.2f}", (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
     #Drawing Lines
-    cv2.line(frame, (x16, y16), (x0, y0), (255, 255, 255), 2)
+    if show_lines_Ala_Tragus:
+        cv2.line(frame, (x33, y33), (x2, y2), (255, 255, 255), 2)
     # Display the frame
     #cv2.namedWindow("Side Face Landmark Detection", cv2.WINDOW_NORMAL)
     #cv2.moveWindow("Side Face Landmark Detection", 0, 100)
@@ -329,14 +490,14 @@ while True:
     # Save a snapshot of the GUI as an image
     cv2.imwrite(f"{images_dir}/{frame_count}.jpg", frame)
     # Wait for a key press to exit
-    if cv2.waitKey(1) == ord('q'):
+    if cv2.waitKey(1) == ord('q') or cv2.getWindowProperty("Side Face Landmark Detection", cv2.WND_PROP_VISIBLE) < 1:
         break
 
 # Release the video capture stream and close all windows
-graph(g1,'Soft tissue over nasion','Subnasale')
-graph(g2,'Subnasale','Soft tissue over Poginion')
-angle_graph(g3,'(sN-Ar','-Pog)')
-angle_graph(g4,'(sN-Sn','-Pog)')
+graph(graph_1,'Soft tissue over nasion','Subnasale')
+graph(graph_2,'Subnasale','Soft tissue over Poginion')
+angle_graph(graph_3,'(sN-Ar','-Pog)')
+angle_graph(graph_4,'(sN-Sn','-Pog)')
 cap.release()
 out.release()
 cv2.destroyAllWindows()
