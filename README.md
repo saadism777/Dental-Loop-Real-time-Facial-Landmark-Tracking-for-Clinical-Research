@@ -4,6 +4,7 @@ Dental Loop is a Python-based facial landmark detection application for dental r
 
 
 ## Installation
+The follwing step by steps procedure will aid in installation of the software. Python version : 3.10.11
 1. Install Visual Studio Community Edition and Install Desktop C++ Desktop Environment (Including CMake)
 2. Download CMake. [Link](https://cmake.org/download/)
 3. Download Anaconda or Miniconda.
