@@ -12,7 +12,7 @@ from multiprocessing import Process, Queue
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QCheckBox, QDesktopWidget
 
 # Initialize the webcam or video file path
-cap = cv2.VideoCapture(0) #video file path = 0 for webcam
+cap = cv2.VideoCapture('..\sample\sample_front.mp4') #video file path or 0 for webcam
 
 # Initialize the variables to toggle the lines
 show_lines = True    

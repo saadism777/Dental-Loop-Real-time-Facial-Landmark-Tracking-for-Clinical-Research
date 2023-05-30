@@ -10,7 +10,7 @@ import face_alignment
 from PyQt5.QtWidgets import QDesktopWidget, QApplication, QWidget, QVBoxLayout, QCheckBox
 
 # Open a video capture stream from the default webcam
-cap = cv2.VideoCapture(0) # Enter 0 for webcam
+cap = cv2.VideoCapture('..\sample\sample_side.mp4') # Enter 0 for webcam
 
 # Initialize the variable to toggle the lines
 show_lines = True 
@@ -185,8 +185,6 @@ timestamp_dir = os.path.join(output_dir, date_string)
 if not os.path.exists(timestamp_dir):
     os.makedirs(timestamp_dir)
     
-# Open a video capture stream from the default webcam
-cap = cv2.VideoCapture("C:\Projects\Dental Loops Rough\saadside.mp4") # Enter 0 for webcame
 # Getting resolution of the input
 v_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 v_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
