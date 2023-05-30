@@ -550,7 +550,7 @@ while True:
 
         
         # calculate the text size
-        text_scale = 1  # Adjust the scale as needed
+        text_scale = 0.8  # Adjust the scale as needed
         text_thickness = 2
         text_font = cv2.FONT_HERSHEY_SIMPLEX
 
