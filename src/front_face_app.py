@@ -9,10 +9,21 @@ import cv2
 import dlib
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QCheckBox, QDesktopWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout,QCheckBox, QDesktopWidget, QPushButton
 
 # Initialize the webcam or video file path
-cap = cv2.VideoCapture('..\sample\sample_front.mp4') #video file path or 0 for webcam
+path = '..\sample\sample_front.mp4' #video file path or 0 for webcam
+#path = 1
+cap = cv2.VideoCapture(path) 
+
+if isinstance(path, int):
+    # Set the desired resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+# initialize face width variable
+face_width_mm = float(sys.argv[1])  
+#face_width_mm = 152
 
 # Initialize the variables to toggle the lines
 show_lines = True    
@@ -23,7 +34,7 @@ show_lines_iC_Left = True
 show_lines_iC_Right = True
 show_lines_Ar_Left = True
 show_lines_Ar_Right = True
-
+recording_status = False
 # Checkbox Class for the lines
 class Checkbox(QWidget):
     def __init__(self):
@@ -69,9 +80,19 @@ class Checkbox(QWidget):
         checkbox7.setChecked(self.boolean_variable)
         checkbox7.stateChanged.connect(self.checkbox_state_Ar_Right)
         
+        if isinstance(path, int):
+            start_btn = QPushButton('Start Recording', self)
+            stop_btn = QPushButton('Stop Recording', self)
+        
+            start_btn.clicked.connect(self.start_recording)
+            stop_btn.clicked.connect(self.stop_recording)
 
         # Create a layout and add checkboxes to it
         layout = QVBoxLayout()
+        if isinstance(path, int):
+            layout.addWidget(start_btn)
+            layout.addWidget(stop_btn)
+
         layout.addWidget(checkbox0)
         layout.addWidget(checkbox1)
         layout.addWidget(checkbox2)
@@ -96,6 +117,16 @@ class Checkbox(QWidget):
         # Move the window to the center of the screen
         self.move(center_x - 350 - self.width() // 2, center_y + 200 - self.height() // 2)
     
+    def start_recording(self):
+        global recording_status
+        recording_status = True
+        print("Recording started")
+
+    def stop_recording(self):
+        global recording_status
+        recording_status = False
+        print("Recording stopped")
+
     def checkbox_state(self, state):
         sender = self.sender()
         global show_lines
@@ -195,9 +226,7 @@ class Checkbox(QWidget):
         sys.exit(app.exec_())
         cv2.destroyAllWindows()
         
-# initialize face width variable
-face_width_mm = float(sys.argv[1])  
-#face_width_mm = 152
+
 
 # Get the path to the project's root directory
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -276,7 +305,7 @@ if not os.path.exists(graph_path):
 def graph(dist,p1,p2):
     # Calculate the time array
     time_array = [i / fps_real for i in range(len(dist))]
-    plt.ylim(0, 200)
+    plt.ylim(30, 130)
     # Plot the distance values for the first distance in the array
     plt.plot(time_array, dist)
     
@@ -284,12 +313,19 @@ def graph(dist,p1,p2):
     plt.title(f'Euclidean Distance of Landmarks {p1} and {p2}')
     plt.xlabel('Time (s)')
     plt.ylabel('Distance (mm)')
-    
+
+    # Configure gridlines
+    plt.grid(True, linewidth=0.5)
+    plt.minorticks_on()
+    plt.gca().set_axisbelow(True)
+    plt.gca().yaxis.set_minor_locator(plt.MultipleLocator(1))  # Set minor tick spacing to 0.1
+    plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(0.5))
+    # Adjust the aspect ratio to create smaller grid boxes
+    plt.grid(True, which='minor', linestyle='-', linewidth=0.3)  # Micro gridlines
     output_file = f'{graph_path}/front_euclidean_distance_{p1}_{p2}.jpg'
     
-    plt.savefig(output_file)
     # Save the plot as an image file
-    plt.savefig(output_file)
+    plt.savefig(output_file,dpi=900)
     plt.clf()
 
 # Initialize the variables
@@ -503,22 +539,26 @@ while True:
         d_14_15mm = (d_14_15 / face_width_px) * face_width_mm
         d_9_15_sum = d_9_10mm + d_10_11mm + d_11_12mm + d_12_13mm + d_13_14mm + d_14_15mm
         
-        # Building array for the graph
-        graph_1.append((d1_mm))
-        graph_2.append((d2_mm))
-        
+        if not isinstance(path, int) or recording_status:
+            # Building array for the graph
+            graph_1.append((d1_mm))
+            graph_2.append((d2_mm))
+
+            #Write the frame number and eucledian distances to the distance CSV file
+            with open(distance_csv_path, mode='a') as distance_file:
+                distance_writer = csv.writer(distance_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                distance_writer.writerow([frame_count,elapsed_time_real,face_width_mm, d1_mm, d2_mm, d3_mm, d4_mm, d_3_9_sum, d_9_15_sum])
+
         # Display the frame number and fps on the top left side of the frame
         end_time = datetime.datetime.now()
         elapsed_time = (end_time - start_time).total_seconds()
         fps = frame_count / elapsed_time
         
+        print(fps_real)
         # Calculate the elapsed time
         elapsed_time_real = frame_count/ fps_real
         
-        #Write the frame number and eucledian distances to the distance CSV file
-        with open(distance_csv_path, mode='a') as distance_file:
-            distance_writer = csv.writer(distance_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            distance_writer.writerow([frame_count,elapsed_time_real,face_width_mm, d1_mm, d2_mm, d3_mm, d4_mm, d_3_9_sum, d_9_15_sum])
+        
 
         # Display the eucledian distances on the top right side of the frame
         text0_label="sZy left-sZy right:"
@@ -577,19 +617,25 @@ while True:
         # If no faces are detected, reset the first_face_position variable
         first_face_position = None
 
+    text_scale = 0.8  # Adjust the scale as needed
+    text_thickness = 2
     # Display fps, frame no and time
-    cv2.putText(frame, f"Frame: {frame_count}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-    cv2.putText(frame, f"FPS: {fps:.1f}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-    cv2.putText(frame, f"Time: {elapsed_time_real:.2f}s", (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Frame: {frame_count}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, text_scale, (0, 255, 0), text_thickness, cv2.LINE_AA)
+    cv2.putText(frame, f"FPS: {fps:.1f}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, text_scale, (0, 255, 0), text_thickness, cv2.LINE_AA)
+    cv2.putText(frame, f"Time: {elapsed_time_real:.2f}s", (10, 80), cv2.FONT_HERSHEY_SIMPLEX, text_scale, (0, 255, 0), text_thickness, cv2.LINE_AA)
+    if recording_status and frame_count%2==0:
+        cv2.putText(frame, f"Recording", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, text_scale, (0, 0, 255), text_thickness, cv2.LINE_AA)
     
 
     # Display the frame
     cv2.imshow("Front Face Landmark Detection", frame)
     #cv2.createButton("Toggle Lines", toggle_lines, None, cv2.QT_CHECKBOX, False)
     
-    out.write(frame)
-    # Save a snapshot of the GUI as an image
-    cv2.imwrite(f"{images_dir}/{frame_count}.jpg", frame)
+    if not isinstance(path, int) or recording_status:
+        
+        out.write(frame)
+        # Save a snapshot of the GUI as an image
+        cv2.imwrite(f"{images_dir}/{frame_count}.jpg", frame)
     
     
     

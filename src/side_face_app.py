@@ -250,12 +250,19 @@ def graph(dist,p1,p2):
     plt.title(f'Euclidean Distance of Landmarks {p1} and {p2}')
     plt.xlabel('Time (s)')
     plt.ylabel('Distance (mm)')
+
+    # Configure gridlines
+    plt.grid(True, linewidth=0.5)
+    plt.minorticks_on()
+    plt.gca().set_axisbelow(True)
+    plt.gca().yaxis.set_minor_locator(plt.MultipleLocator(1))  # Set minor tick spacing to 0.1
+    plt.gca().xaxis.set_minor_locator(plt.MultipleLocator(0.5))
+    # Adjust the aspect ratio to create smaller grid boxes
+    plt.grid(True, which='minor', linestyle='-', linewidth=0.3)  # Micro gridlines
     output_file = f'{graph_path}/side_euclidean_distance_{p1}_{p2}.jpg'
-    
-    plt.savefig(output_file)
 
     # Save the plot as an image file
-    plt.savefig(output_file)
+    plt.savefig(output_file, dpi=900)
     plt.clf()
 
 def angle_graph(angle,p1,p2):
