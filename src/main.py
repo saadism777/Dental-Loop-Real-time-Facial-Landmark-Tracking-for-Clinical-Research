@@ -19,8 +19,9 @@ def start_or_stop_processes(start):
     if start:
         # Start the two subprocesses and return the objects
         front_proc = Popen(['python', 'front_face_app.py', str(front_face_width)])
-        side_proc = Popen(['python', 'side_face_app.py', str(side_face_width)])
-        return front_proc, side_proc
+        if side_face_width is not None:
+            side_proc = Popen(['python', 'side_face_app.py', str(side_face_width)])
+        
     else:
         # Stop the two subprocesses using their objects
         # front_proc.send_signal(signal.SIGTERM)
@@ -123,7 +124,7 @@ class MainWindow(QtWidgets.QWidget):
     def get_entry_value(self):
         global front_face_width, side_face_width
         front_face_width = float(self.entry.text())
-        side_face_width = float(self.entry2.text())
+        side_face_width = float(self.entry2.text()) if self.entry2.text() else None
         # Use the face_width value in your application
         print("The front face width is:", front_face_width)
         print("The side face width is:", side_face_width)
