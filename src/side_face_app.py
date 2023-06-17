@@ -178,7 +178,7 @@ avg_point = None
 
 # Initialize the face alignment model
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, device=device, face_detector='sfd')
+model = face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D, device=device, face_detector='sfd')
 print(device)
 
 # Get the path to the project's root directory

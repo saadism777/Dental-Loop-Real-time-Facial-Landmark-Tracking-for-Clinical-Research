@@ -19,7 +19,8 @@ def start_or_stop_processes(start):
     global front_proc, side_proc
     if start:
         # Start the two subprocesses and return the objects
-        front_proc = Popen(['python', 'front_face_app.py', str(front_face_width), str(front_path)])
+        if front_face_width is not None:
+            front_proc = Popen(['python', 'front_face_app.py', str(front_face_width), str(front_path)])
         if side_face_width is not None:
             side_proc = Popen(['python', 'side_face_app.py', str(side_face_width), str(side_path)])
         
@@ -27,7 +28,7 @@ def start_or_stop_processes(start):
         # Stop the two subprocesses using their objects
         # front_proc.send_signal(signal.SIGTERM)
         # side_proc.send_signal(signal.SIGTERM)
-        print("Already running")
+        print("Missing values")
 
 class MainWindow(QtWidgets.QWidget):
     def __init__(self):
