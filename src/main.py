@@ -1,7 +1,7 @@
 import os
 import signal
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QApplication,QLabel,QDesktopWidget,QHBoxLayout, QCheckBox, QVBoxLayout
+from PyQt5.QtWidgets import QApplication,QLabel,QDesktopWidget,QHBoxLayout, QCheckBox, QVBoxLayout, QFileDialog
 import socket
 import time
 import sys
@@ -13,14 +13,15 @@ front_proc = None
 side_proc = None
 front_face_width = None
 side_face_width = None
-
+front_path = None
+side_path = None
 def start_or_stop_processes(start):
     global front_proc, side_proc
     if start:
         # Start the two subprocesses and return the objects
-        front_proc = Popen(['python', 'front_face_app.py', str(front_face_width)])
+        front_proc = Popen(['python', 'front_face_app.py', str(front_face_width), str(front_path)])
         if side_face_width is not None:
-            side_proc = Popen(['python', 'side_face_app.py', str(side_face_width)])
+            side_proc = Popen(['python', 'side_face_app.py', str(side_face_width), str(side_path)])
         
     else:
         # Stop the two subprocesses using their objects
@@ -36,8 +37,18 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Dental Loop")
         self.label = QtWidgets.QLabel("Enter the front face width value:")
         self.entry = QtWidgets.QLineEdit()
+        
+        self.labelB = QLabel("Select Input File: ")
+        self.buttonB = QtWidgets.QPushButton('Browse File')
+        self.buttonB.clicked.connect(self.showFileDialog)
+        
         self.label2 = QtWidgets.QLabel("Enter the side face width value:")
         self.entry2 = QtWidgets.QLineEdit()
+
+        self.labelC = QLabel("Select Input File: ")
+        self.buttonC = QtWidgets.QPushButton('Browse File')
+        self.buttonC.clicked.connect(self.showFileDialog2)
+
         font = QtGui.QFont()
         font.setPointSize(16)
         self.label.setAlignment(QtCore.Qt.AlignCenter)
@@ -66,8 +77,12 @@ class MainWindow(QtWidgets.QWidget):
         
         layout.addWidget(self.label)
         layout.addWidget(self.entry)
+        layout.addWidget(self.labelB)
+        layout.addWidget(self.buttonB)
         layout.addWidget(self.label2)
         layout.addWidget(self.entry2)
+        layout.addWidget(self.labelC)
+        layout.addWidget(self.buttonC)
         layout.addWidget(self.button)
         layout.addWidget(self.button2)
         #layout.addWidget(self.label3)
@@ -111,6 +126,28 @@ class MainWindow(QtWidgets.QWidget):
     #                self.queue.put('show_lines')
     #            else:
     #                self.queue.put('hide_lines')
+    def showFileDialog(self):
+        file_dialog = QFileDialog()
+        file_dialog.setFileMode(QFileDialog.AnyFile)
+        file_dialog.fileSelected.connect(self.fileSelectedAction)
+        file_dialog.exec_()
+    
+    def fileSelectedAction(self, filepath):
+        # Do something with the filepath
+        global front_path
+        front_path=filepath
+        self.labelB.setText(f"Selected file: {front_path}")
+
+    def showFileDialog2(self):
+        file_dialog = QFileDialog()
+        file_dialog.setFileMode(QFileDialog.AnyFile)
+        file_dialog.fileSelected.connect(self.fileSelectedAction2)
+        file_dialog.exec_()
+    def fileSelectedAction2(self, filepath):
+            # Do something with the filepath
+            global side_path
+            side_path=filepath
+            self.labelC.setText(f"Selected file: {side_path}")
     def center(self):
         # Get the geometry of the screen
         screen = QDesktopWidget().screenGeometry()

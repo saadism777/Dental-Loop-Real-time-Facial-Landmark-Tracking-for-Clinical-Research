@@ -10,7 +10,17 @@ import face_alignment
 from PyQt5.QtWidgets import QDesktopWidget, QApplication, QWidget, QVBoxLayout, QCheckBox
 
 # Open a video capture stream from the default webcam
-cap = cv2.VideoCapture('..\sample\sample_side.mp4') # Enter 0 for webcam
+path = str(sys.argv[2])
+
+if path=='None':
+    path = 1
+
+cap = cv2.VideoCapture(path)
+
+if isinstance(path, int):
+    # Set the desired resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
 # Initialize the variable to toggle the lines
 show_lines = True 

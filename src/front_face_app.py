@@ -12,9 +12,13 @@ from multiprocessing import Process, Queue
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout,QCheckBox, QDesktopWidget, QPushButton
 
 # Initialize the webcam or video file path
-path = '..\sample\sample_front.mp4' #video file path or 0 for webcam
+#path = '..\sample\sample_front.mp4' #video file path or 0 for webcam
 #path = 1
-cap = cv2.VideoCapture(path) 
+path = str(sys.argv[2])
+if path=='None':
+    path = 0
+
+cap = cv2.VideoCapture(path)
 
 if isinstance(path, int):
     # Set the desired resolution
@@ -24,7 +28,7 @@ if isinstance(path, int):
 # initialize face width variable
 face_width_mm = float(sys.argv[1])  
 #face_width_mm = 152
-
+print(sys.argv[2])
 # Initialize the variables to toggle the lines
 show_lines = True    
 show_lines_sZy = True
@@ -554,7 +558,7 @@ while True:
         elapsed_time = (end_time - start_time).total_seconds()
         fps = frame_count / elapsed_time
         
-        print(fps_real)
+        #print(fps_real)
         # Calculate the elapsed time
         elapsed_time_real = frame_count/ fps_real
         
