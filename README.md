@@ -33,3 +33,5 @@ The follwing step by steps procedure will aid in installation of the software. P
 ```bash
  python main.py 
 ```
+## Input Information
+Input can be video files of any format and resolution. Ideal video file aspect ratio is 16:9
