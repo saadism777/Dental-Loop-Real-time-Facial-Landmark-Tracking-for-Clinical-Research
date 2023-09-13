@@ -11,52 +11,56 @@ from PyQt5.QtCore import QTimer, Qt
 #Initializign variables
 front_proc = None
 side_proc = None
-front_face_width = None
-side_face_width = None
+marker_diameter = None
 front_path = None
 side_path = None
-def start_or_stop_processes(start):
-    global front_proc, side_proc
-    if start:
-        # Start the two subprocesses and return the objects
-        if front_face_width is not None:
-            front_proc = Popen(['python', 'front_face_app.py', str(front_face_width), str(front_path)])
-        if side_face_width is not None:
-            side_proc = Popen(['python', 'side_face_app.py', str(side_face_width), str(side_path)])
-        
-    else:
-        # Stop the two subprocesses using their objects
-        # front_proc.send_signal(signal.SIGTERM)
-        # side_proc.send_signal(signal.SIGTERM)
-        print("Missing values")
+
 
 class MainWindow(QtWidgets.QWidget):
+    def start_or_stop_processes(self):
+        global front_proc, side_proc
+        global marker_diameter
+        marker_diameter = float(self.entry.text())
+
+        # Use the face_width value in your application
+        print(f"The marker diameter is: {marker_diameter}mm")
+        # Start the two subprocesses and return the objects
+        if side_path is not None:
+            side_proc = Popen(['python', 'side_face_app.py', str(side_path),str(default_output_filename2), str(marker_diameter)])
+        if front_path is not None:
+            front_proc = Popen(['python', 'front_face_app copy.py', str(front_path), str(default_output_filename), str(marker_diameter)])
+
+        
+        
+         
+            
     def __init__(self):
         super().__init__()
         self.resize(300, 300)
         self.center()
-        self.setWindowTitle("Dental Loop")
-        self.label = QtWidgets.QLabel("Enter the front face width value:")
+        self.setWindowTitle("Dental Loop FLT")
+        self.label = QtWidgets.QLabel("Enter tracking marker diameter value(mm):")
         self.entry = QtWidgets.QLineEdit()
+        self.entry.setText("15")
         
-        self.labelB = QLabel("Select Input File: ")
+        self.labelB = QLabel("Select Front Face Input File: ")
         self.buttonB = QtWidgets.QPushButton('Browse File')
         self.buttonB.clicked.connect(self.showFileDialog)
         
-        self.label2 = QtWidgets.QLabel("Enter the side face width value:")
-        self.entry2 = QtWidgets.QLineEdit()
+        #self.label2 = QtWidgets.QLabel("Enter the side face width value:")
+        #self.entry2 = QtWidgets.QLineEdit()
 
-        self.labelC = QLabel("Select Input File: ")
+        self.labelC = QLabel("Select Side Face Input File: ")
         self.buttonC = QtWidgets.QPushButton('Browse File')
         self.buttonC.clicked.connect(self.showFileDialog2)
 
         font = QtGui.QFont()
         font.setPointSize(16)
         self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label2.setAlignment(QtCore.Qt.AlignCenter)
+        #self.label2.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setFont(font)
-        self.label2.setFont(font)
-        self.button = QtWidgets.QPushButton("OK", clicked=self.get_entry_value)
+        #self.label2.setFont(font)
+        self.button = QtWidgets.QPushButton("OK", clicked=self.start_or_stop_processes)
         self.button2 = QtWidgets.QPushButton("Exit", clicked=self.close_app)
         # Create the label and checkbox widgets
         #self.label3 = QLabel('Front Face Lines:', self)
@@ -80,8 +84,8 @@ class MainWindow(QtWidgets.QWidget):
         layout.addWidget(self.entry)
         layout.addWidget(self.labelB)
         layout.addWidget(self.buttonB)
-        layout.addWidget(self.label2)
-        layout.addWidget(self.entry2)
+        #layout.addWidget(self.label2)
+        #layout.addWidget(self.entry2)
         layout.addWidget(self.labelC)
         layout.addWidget(self.buttonC)
         layout.addWidget(self.button)
@@ -135,9 +139,18 @@ class MainWindow(QtWidgets.QWidget):
     
     def fileSelectedAction(self, filepath):
         # Do something with the filepath
-        global front_path
+        global front_path, default_output_filename
         front_path=filepath
         self.labelB.setText(f"Selected file: {front_path}")
+        # Extract the path from the last backslash up to the file extension
+        filename = os.path.basename(filepath)
+        index_of_last_backslash = filename.rfind("\\")
+        index_of_extension = filename.rfind(".")
+        if index_of_last_backslash != -1 and index_of_extension != -1:
+            default_output_filename = filename[index_of_last_backslash + 1:index_of_extension]
+        else:
+            # If there's no backslash or no file extension, set the entire filename as default
+                default_output_filename = filename
 
     def showFileDialog2(self):
         file_dialog = QFileDialog()
@@ -146,9 +159,18 @@ class MainWindow(QtWidgets.QWidget):
         file_dialog.exec_()
     def fileSelectedAction2(self, filepath):
             # Do something with the filepath
-            global side_path
+            global side_path, default_output_filename2
             side_path=filepath
             self.labelC.setText(f"Selected file: {side_path}")
+            # Extract the path from the last backslash up to the file extension
+            filename = os.path.basename(filepath)
+            index_of_last_backslash = filename.rfind("\\")
+            index_of_extension = filename.rfind(".")
+            if index_of_last_backslash != -1 and index_of_extension != -1:
+                default_output_filename2 = filename[index_of_last_backslash + 1:index_of_extension]
+            else:
+                # If there's no backslash or no file extension, set the entire filename as default
+                default_output_filename2 = filename
     def center(self):
         # Get the geometry of the screen
         screen = QDesktopWidget().screenGeometry()
@@ -168,7 +190,7 @@ class MainWindow(QtWidgets.QWidget):
         print("The side face width is:", side_face_width)
         # Launch both apps
         # Example usage:
-        start_or_stop_processes(True)
+        self.start_or_stop_processes()
         #self.start_subprocess()
     
     def close_app(self):

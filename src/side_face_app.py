@@ -3,14 +3,18 @@ import datetime
 import math
 import os
 import sys
+
 import cv2
-import matplotlib.pyplot as plt
-import torch
 import face_alignment
-from PyQt5.QtWidgets import QDesktopWidget, QApplication, QWidget, QVBoxLayout, QCheckBox
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QDesktopWidget,
+                             QVBoxLayout, QWidget)
+from scipy import stats
 
 # Open a video capture stream from the default webcam
-path = str(sys.argv[2])
+path = str(sys.argv[1])
 
 if path=='None':
     path = 1
@@ -167,7 +171,7 @@ class Checkbox(QWidget):
         sys.exit(app.exec_())
         cv2.destroyAllWindows()
 # initialize face width variable
-face_width_mm = float(sys.argv[1])
+reference_diameter_mm = float(sys.argv[3])
 #face_width_mm=84
 
 # Store the landmarks for the first face detected
@@ -178,7 +182,7 @@ avg_point = None
 
 # Initialize the face alignment model
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D, device=device, face_detector='sfd')
+model = face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D, device=device, face_detector='blazeface')
 print(device)
 
 # Get the path to the project's root directory
@@ -189,8 +193,12 @@ output_dir = os.path.join(project_root, '..' , 'outputs')
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-# Timestamp Dir
-date_string = datetime.datetime.now().strftime("%d-%m-%Y_%I-%M%p")
+#Timestamp Dir
+if str(sys.argv[2]) is None:
+    date_string = datetime.datetime.now().strftime("%d-%m-%Y_%I-%M%p")
+else:
+    date_string = str(sys.argv[2])
+    date_string = date_string[:-3]
 timestamp_dir = os.path.join(output_dir, date_string)
 if not os.path.exists(timestamp_dir):
     os.makedirs(timestamp_dir)
@@ -338,12 +346,24 @@ graph_1 = []
 graph_2 = []
 graph_3 = []
 graph_4 = []
+diameters = []
 start_time = datetime.datetime.now()
+mode_diameter = None
+reference_diameter_mm = float(sys.argv[3])
+
+list_landmarks_9 = []
+list_landmarks_34 = []
+list_index = 0
+theta = None
+horizontal_distance_moved = None
+horz_dist_list = []
+highest_horz_dist = None
 
 # Starting the Checkbox app
 app = QApplication(sys.argv)
 window = Checkbox()
 window.show()
+left_half_indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 17, 18, 19, 20, 21, 36, 37,38, 39, 40, 41 , 27,28,29,30,31,32,33,34,35, 48, 49,50,51,60,61,62,67,66,59,58,57]
 # Process the video
 while True:
     # Read a frame from the video stream
@@ -360,6 +380,106 @@ while True:
     # Detect facial landmarks using the FAN model
     faces = model.get_landmarks_from_image(gray)
     
+    faces=faces[0]
+    #print(len(faces[0]))
+    #print(faces[21])   
+
+    # Get the left jaw to neck region based on landmarks
+    jaw_left = faces[2][0] - 50  # Adjust the value as needed (left-most point of the jaw)
+    jaw_bottom = faces[2][1] - 20  # Adjust the value as needed (bottom-most point of the jaw)
+    neck_left = faces[8][0] + 20  # Adjust the value as needed (left-most point of the neck)
+    neck_bottom = faces[8][1] + 20
+    
+    # Apply Gaussian blur to reduce noise
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0) 
+
+
+    # Create a blank mask with the same size as the image
+    mask = np.zeros_like(gray)
+
+    # Define the ROI using the facial landmarks
+    roi_points = np.array([[(jaw_left, jaw_bottom),
+                        (jaw_left, neck_bottom),
+                        (neck_left, neck_bottom),
+                        (neck_left, jaw_bottom)]], dtype=np.int32)
+
+    # Fill the ROI region in the mask with white
+    cv2.fillPoly(mask, roi_points, 255)
+
+    # Apply the mask to the grayscale image
+    masked_image = cv2.bitwise_and(gray, mask)
+    circles = cv2.HoughCircles(masked_image, cv2.HOUGH_GRADIENT, dp=1, minDist=1000, param1=10, param2=20, minRadius=3, maxRadius=10)   
+    
+    # Ensure that circles are detected
+    if circles is not None:
+        # Convert the circle parameters to integers
+        circles = np.round(circles[0, :]).astype(int)
+        
+        # Get the first circle
+        (x, y, r) = circles[0]
+        
+        diameter = r*2
+
+            # Add the diameter to the list
+        diameters.append(diameter)
+                # Calculate the mode diameter
+        if diameters:
+            mode_diameter = stats.mode(diameters).mode[0]
+            conversion_rate = reference_diameter_mm / mode_diameter
+        # Convert circle coordinates to global coordinates
+        #x += forehead_left
+        #y += forehead_top
+        # Calculate the conversion rate (pixels to mm) based on the diameter of the reference object
+        
+        # Draw the circle on the original image
+        cv2.circle(frame, (x, y), r, (0, 255, 0), 2)
+    
+    # Assuming 'faces' contains the facial landmark points
+    # Define the left jaw to neck region polygon based on landmarks
+    points = []
+    conversion_rate = 1.5
+    points.append((faces[2][0] - 50, faces[2][1]))  # Adjust the point indices as needed (left-most point of the jaw)
+    points.append((faces[2][0] - 50, faces[2][1] - 20))  # Top-left corner of the square
+    points.append((faces[8][0] + 20, faces[2][1] - 20))  # Top-right corner of the square
+    points.append((faces[8][0] + 20, faces[8][1] + 20))  # Bottom-right corner of the square
+    points.append((faces[2][0] - 50, faces[8][1] + 20))  # Bottom-left corner of the square
+    points = np.array(points, dtype=np.int32)
+    # Draw the forehead region polygon on the image
+    cv2.polylines(frame, [points], isClosed=True, color=(0, 255, 0), thickness=1)
+
+    
+    point_34 = faces[34-1]
+    point_9 = faces[9-1]
+    if frame_count % 150 == 0:
+        list_landmarks_34.append(point_34)
+        list_landmarks_9.append(point_9)
+        list_index += 1   
+    
+        # Assuming you have point_8 and point_34 as tuples containing (x, y) coordinates
+    if list_landmarks_9 and list_landmarks_34 is not None:
+        x9_initial, y9_initial = list_landmarks_9[list_index-1]
+        x34_initial, y34_initial = list_landmarks_34[list_index-1]
+        
+
+        # Calculate the initial displacement of Sn-sPog
+        initial_displacement = math.sqrt((x34_initial - x9_initial)**2 + (y34_initial - y9_initial)**2)
+
+        # Assuming you have the new positions after jaw movement as point_8_new and point_34_new
+        x9_final, y9_final = point_9
+        x34_final, y34_final = point_34
+
+        # Calculate the final displacement of Sn-sPog after jaw movement
+        final_displacement = x9_final - x9_initial
+        # Calculate the horizontal distance moved using the final displacement
+        horizontal_distance_moved = final_displacement
+        
+        final_displacement = final_displacement*conversion_rate
+
+
+        horizontal_distance_moved = horizontal_distance_moved*conversion_rate
+        horz_dist_list.append(horizontal_distance_moved)
+        highest_horz_dist = max(horz_dist_list)
+    
     # define the size and position of the black box
     box_width = 150
     box_height = 50
@@ -372,8 +492,7 @@ while True:
     # draw the black box on the frame
     cv2.rectangle(frame, (box_x, box_y), (width, height), (0, 0, 0), -1)
     
-    faces=faces[0]
-    print(len(faces[0]))
+
     #Coordinate points for the landmarks  
     if len(faces) > 0:
         (x,y) = map(int,faces[34-1])
@@ -387,10 +506,11 @@ while True:
        
         # draw the lines on the frame
         draw_lines(frame) 
-        for landmark in faces:
-            x, y = map(int, landmark)
-            cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
-        
+        for idx, landmark in enumerate(faces):
+            if idx in left_half_indices:  # Check if the index is in the array of left half indices
+                x, y = map(int, landmark)
+                cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
+                
         # If landmark is 22 or 23, update avg_point
         if len(faces) > 21 and len(faces) > 22:
                 x21, y21 = map(int, faces[21])
@@ -415,10 +535,15 @@ while True:
         face_width_px = math.sqrt((x2 - x33) ** 2 +
                         (y2 - y33) ** 2)
         
+        face_width_mm =100
         #face_width_mm from input
-        d1_mm = (d1 / face_width_px) * face_width_mm
-        d2_mm = (d2 / face_width_px) * face_width_mm
-        d3_mm = (d3 / face_width_px) * face_width_mm
+        #d1_mm = (d1 / face_width_px) * face_width_mm
+        #d2_mm = (d2 / face_width_px) * face_width_mm
+        #d3_mm = (d3 / face_width_px) * face_width_mm
+
+        d1_mm = d1*conversion_rate
+        d2_mm = d2*conversion_rate
+        d3_mm = d3*conversion_rate
 
         # Extract the landmarks of interest
         landmark_2 = faces[2-1]  
@@ -480,6 +605,14 @@ while True:
                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1, cv2.LINE_AA)
         cv2.putText(frame, text5,(x_ec, y_ec+205),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 125, 255), 1, cv2.LINE_AA)
+        cv2.putText(frame, f"Ref_Diameter: {reference_diameter_mm}mm",(x_ec, y_ec+225),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 125, 255), 1, cv2.LINE_AA)
+        cv2.putText(frame, f"Diameter: {mode_diameter}px",(x_ec, y_ec+245),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 125, 255), 1, cv2.LINE_AA)
+        cv2.putText(frame, f"Protr dist: {horizontal_distance_moved}mm",(x_ec, y_ec+265),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 125, 255), 1, cv2.LINE_AA)
+        cv2.putText(frame, f"Protr Max: {highest_horz_dist}mm",(x_ec, y_ec+285),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 125, 255), 1, cv2.LINE_AA)
     end_time = datetime.datetime.now()
     end_time = datetime.datetime.now()
     elapsed_time = (end_time - start_time).total_seconds()
@@ -493,6 +626,7 @@ while True:
     cv2.putText(frame, f"Frame: {frame_count}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
     cv2.putText(frame, f"FPS: {fps:.1f}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
     cv2.putText(frame, f"Time: {elapsed_time_real:.2f}", (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+    #cv2.putText(frame, f"Protrusion: {highest_horz_dist}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
     #Drawing Lines
     if show_lines_Ala_Tragus:
         cv2.line(frame, (x33, y33), (x2, y2), (255, 255, 255), 2)
