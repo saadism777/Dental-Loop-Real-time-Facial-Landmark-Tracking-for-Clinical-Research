@@ -28,7 +28,7 @@ class MainWindow(QtWidgets.QWidget):
         if side_path is not None:
             side_proc = Popen(['python', 'side_face_app.py', str(side_path),str(default_output_filename2), str(marker_diameter)])
         if front_path is not None:
-            front_proc = Popen(['python', 'front_face_app copy.py', str(front_path), str(default_output_filename), str(marker_diameter)])
+            front_proc = Popen(['python', 'front_face_app.py', str(front_path), str(default_output_filename), str(marker_diameter)])
 
         
         
