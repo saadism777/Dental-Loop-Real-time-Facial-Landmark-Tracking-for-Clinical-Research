@@ -35,3 +35,6 @@ The follwing step by steps procedure will aid in installation of the software. P
 ```
 ## Input Information
 Input can be video files of any format and resolution. Ideal video file aspect ratio is 16:9
+
+## Publication
+[SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711023002273)
